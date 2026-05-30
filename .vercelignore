@@ -1,0 +1,13 @@
+*.HS0
+*.hs0
+*.HSO
+*.hso
+*.wav
+*.WAV
+*.aif
+*.AIF
+*.aiff
+*.AIFF
+
+node_modules/
+dist/
