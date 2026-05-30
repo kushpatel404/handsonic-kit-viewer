@@ -1,0 +1,16 @@
+*.HS0
+*.hs0
+*.HSO
+*.hso
+*.wav
+*.WAV
+*.aif
+*.AIF
+*.aiff
+*.AIFF
+
+.DS_Store
+Thumbs.db
+node_modules/
+dist/
+

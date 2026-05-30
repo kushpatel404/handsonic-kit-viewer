@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HandSonic Kit Viewer</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="topbar">
+        <div>
+          <p class="eyebrow">HPD-20 backup inspector</p>
+          <h1>HandSonic Kit Viewer</h1>
+        </div>
+        <div class="actions">
+          <button id="sample-button" class="upload secondary" type="button">Load sample</button>
+          <button id="export-button" class="upload secondary" type="button">Export map</button>
+          <button id="save-backup-button" class="upload secondary" type="button">Save backup</button>
+          <label class="upload">
+            <input id="file-input" type="file" accept=".hs0,.HS0,.hso,.HSO,application/octet-stream" />
+            <span>Open backup</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <aside class="sidebar">
+          <div class="meta" id="backup-meta">
+            <strong>No backup loaded</strong>
+            <span>Choose a .HS0 file to inspect kits.</span>
+          </div>
+          <section class="kit-editor">
+            <h3>Kit</h3>
+            <label class="field-label" for="kit-name-input">Kit name</label>
+            <input id="kit-name-input" class="text-field" type="text" placeholder="Load a kit first" />
+            <label class="field-label" for="kit-sub-name-input">Kit sub name</label>
+            <input id="kit-sub-name-input" class="text-field" type="text" placeholder="Optional" />
+            <label class="slider-row" for="kit-volume">
+              <span>Volume</span>
+              <input id="kit-volume" type="range" min="0" max="127" value="100" />
+              <output id="kit-volume-value">100</output>
+            </label>
+            <label class="slider-row" for="kit-tempo">
+              <span>Tempo</span>
+              <input id="kit-tempo" type="range" min="40" max="260" step="0.1" value="120" />
+              <input id="kit-tempo-value" class="number-field" type="number" min="40" max="260" step="0.1" value="120" />
+            </label>
+            <div class="pad-link-row">
+              <label>
+                <span>Pad link</span>
+                <select id="pad-link-a"></select>
+              </label>
+              <label>
+                <span>To</span>
+                <select id="pad-link-b"></select>
+              </label>
+            </div>
+          </section>
+          <section class="parameter-stack">
+            <details open>
+              <summary>Main</summary>
+              <div class="parameter-grid">
+                <label>Level<input id="pad-level" type="range" min="0" max="127" value="100" /></label>
+                <label>Tune<input id="pad-tune" type="range" min="-24" max="24" value="0" /></label>
+                <label>Pan<input id="pad-pan" type="range" min="-64" max="64" value="0" /></label>
+              </div>
+            </details>
+            <details>
+              <summary>Sub</summary>
+              <div class="parameter-grid">
+                <label>Layer<select id="pad-layer"><option>Main</option><option>Sub</option><option>Velocity</option></select></label>
+                <label>Mute group<select id="pad-mute"><option>Off</option><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
+                <label>Trigger<select id="pad-trigger"><option>Shot</option><option>Alt</option><option>Loop</option></select></label>
+                <label class="check-field"><input id="pad-loop" type="checkbox" /><span>Loop this pad</span></label>
+                <label>Loop source BPM<input id="pad-loop-bpm" class="number-field" type="number" min="20" max="320" step="0.1" value="120" /></label>
+              </div>
+            </details>
+            <details>
+              <summary>MIDI</summary>
+              <div class="parameter-grid">
+                <label>Note<input id="pad-midi-note" class="number-field" type="number" min="0" max="127" value="60" /></label>
+                <label>Channel<select id="pad-midi-channel"></select></label>
+                <label>Gate<select id="pad-midi-gate"><option>Shot</option><option>Gate</option><option>Alt</option></select></label>
+              </div>
+            </details>
+          </section>
+          <div class="search-row">
+            <input id="kit-search" type="search" placeholder="Search kits" />
+          </div>
+          <div class="kit-list" id="kit-list" aria-label="Kit list"></div>
+        </aside>
+
+        <section class="kit-stage">
+          <div class="kit-header">
+            <div>
+              <p class="eyebrow" id="kit-number">Kit</p>
+              <h2 id="kit-name">Open a HandSonic backup</h2>
+            </div>
+            <div class="status-pill" id="decode-status">Waiting for file</div>
+          </div>
+
+          <div class="handsonic" id="pad-layout" aria-label="HandSonic pad layout"></div>
+
+          <div class="details">
+            <div>
+              <h3>Selected Pad</h3>
+              <p id="pad-detail">Select a kit and pad to see decoded values.</p>
+              <div class="pad-actions">
+                <button id="clear-pad-button" type="button">Clear assign</button>
+                <button id="play-pad-button" type="button">Play</button>
+                <button id="stop-button" type="button">Stop</button>
+              </div>
+            </div>
+            <div>
+              <h3>Kit Tools</h3>
+              <div class="kit-actions">
+                <button id="init-kit-button" type="button">Init</button>
+                <button id="duplicate-kit-button" type="button">Duplicate</button>
+                <button id="add-kit-button" type="button">Add</button>
+                <button id="delete-kit-button" type="button">Delete</button>
+                <button id="kit-up-button" type="button">Up</button>
+                <button id="kit-down-button" type="button">Down</button>
+              </div>
+              <div class="project-actions">
+                <button id="open-project-button" type="button">Open</button>
+                <input id="project-input" type="file" accept=".json,application/json" />
+                <button id="save-project-button" type="button">Save project</button>
+              </div>
+            </div>
+            <div>
+              <h3>Instrument Library</h3>
+              <p id="sample-summary">Embedded sample names will appear after loading a backup.</p>
+              <div class="library-actions">
+                <label class="mini-upload">
+                  <input id="wave-input" type="file" accept=".wav,.aif,.aiff,audio/*" multiple />
+                  <span>Import waves</span>
+                </label>
+                <button id="play-sample-button" type="button">Play</button>
+                <button id="delete-sample-button" type="button">Delete</button>
+              </div>
+              <div class="tag-row">
+                <select id="tag-select">
+                  <option value="">Tag list</option>
+                  <option>Favorite</option>
+                  <option>Percussion</option>
+                  <option>Loop</option>
+                  <option>FX</option>
+                </select>
+                <button id="tag-sample-button" type="button">Tag</button>
+              </div>
+              <div id="sample-list" class="sample-list"></div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
