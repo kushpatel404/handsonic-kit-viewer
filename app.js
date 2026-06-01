@@ -463,7 +463,7 @@ function renderSelectedKit() {
   els.kitVolumeValue.value = kit.volume;
   els.kitVolumeValue.textContent = kit.volume;
   els.kitTempo.value = kit.tempo;
-  els.kitTempoValue.value = Number(kit.tempo).toFixed(1);
+  els.kitTempoValue.value = Math.round(Number(kit.tempo) || 120);
   els.padLinkA.value = kit.padLinkA;
   els.padLinkB.value = kit.padLinkB;
   updateLoopTempoForKit(kit);
@@ -537,7 +537,7 @@ function renderDetails() {
     const label = getAssignmentLabel(assignment);
     const playbackStatus = getPlaybackStatus(assignment);
     const loopStatus = isPadLoopEnabled(assignment)
-      ? `Loop: source ${Math.round(Number(assignment.editor.loopBpm) || 120)} BPM / kit ${Number(kit.tempo).toFixed(1)} BPM`
+      ? `Loop: source ${Math.round(Number(assignment.editor.loopBpm) || 120)} BPM / kit ${Math.round(Number(kit.tempo) || 120)} BPM`
       : "Loop: off";
     els.padDetail.innerHTML = `
       <strong>${pad.id}</strong> on <strong>${escapeHtml(kit.name)}</strong><br />
@@ -645,7 +645,7 @@ function updateKitSettings(event) {
   kit.subName = els.kitSubNameInput.value.trim();
   kit.volume = Number(els.kitVolume.value);
   const tempoSource = event.target === els.kitTempoValue ? els.kitTempoValue.value : els.kitTempo.value;
-  kit.tempo = Math.max(40, Math.min(260, Number(tempoSource) || 120));
+  kit.tempo = Math.max(40, Math.min(260, Math.round(Number(tempoSource) || 120)));
   kit.padLinkA = els.padLinkA.value;
   kit.padLinkB = els.padLinkB.value;
   state.activeAudios.forEach((audio) => {
