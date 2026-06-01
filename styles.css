@@ -837,7 +837,7 @@ select,
 .sample-list {
   display: grid;
   gap: 6px;
-  max-height: 260px;
+  max-height: min(420px, calc(100vh - 650px));
   overflow: auto;
   margin-top: 12px;
   padding-right: 4px;
