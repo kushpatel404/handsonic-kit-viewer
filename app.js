@@ -564,8 +564,9 @@ function renderDetails() {
 function getPlaybackStatus(assignment) {
   if (assignment.audioUrl) return "imported audio file";
   const sample = state.samples.find((item) => item.id === assignment.raw);
-  if (sample?.hasBackupAudio) return "extracted backup sound";
-  return "generated preview tone";
+  if (sample?.hasBackupAudio) return "experimental extracted backup sound";
+  if (sample) return "backup sound name only / audio not decoded";
+  return "no decoded audio";
 }
 
 function renderSampleList() {
@@ -1014,11 +1015,11 @@ function playPadVoice(pad, assignment) {
   const audioUrl = getAssignmentAudioUrl(assignment);
   if (audioUrl) {
     playAudioUrl(audioUrl, volume, assignment, pad.id, getTunePitchRatio(assignment))
-      .catch(() => playPreviewTone(assignment.raw, pad.slot, volume, getTunePitchRatio(assignment)));
+      .catch(() => showPlaybackNotice("This sound could not be played from the backup data."));
     return;
   }
 
-  playPreviewTone(assignment.raw, pad.slot, volume, getTunePitchRatio(assignment));
+  showPlaybackNotice(getUnsupportedAudioMessage(assignment));
 }
 
 function getLinkedPadId(kit, padId) {
@@ -1093,7 +1094,7 @@ async function toggleLoopPad(kit, pad, assignment) {
 
   const audioUrl = getAssignmentAudioUrl(assignment);
   if (!audioUrl) {
-    playPreviewTone(assignment.raw, pad.slot, getPadPlaybackVolume(assignment));
+    showPlaybackNotice(getUnsupportedAudioMessage(assignment));
     return;
   }
 
@@ -1102,7 +1103,7 @@ async function toggleLoopPad(kit, pad, assignment) {
     renderPads();
     renderDetails();
   } catch (error) {
-    playPreviewTone(assignment.raw, pad.slot, getPadPlaybackVolume(assignment));
+    showPlaybackNotice("This loop could not be played from the backup data.");
   }
 }
 
@@ -1275,10 +1276,21 @@ function playSelectedSample() {
   const volume = getKitVolume();
   const audioUrl = getSampleAudioUrl(sample);
   if (audioUrl) {
-    playAudioUrl(audioUrl, volume).catch(() => playPreviewTone(sample.id, 0, volume));
+    playAudioUrl(audioUrl, volume).catch(() => showPlaybackNotice("This library sound could not be played from the backup data."));
   } else {
-    playPreviewTone(sample.id, 0, volume);
+    showPlaybackNotice(`${sample.name} is listed in the backup, but its audio data was not decoded.`);
   }
+}
+
+function getUnsupportedAudioMessage(assignment) {
+  if (!assignment || assignment.raw === 0 || assignment.raw === 0x7f) return "No sound is assigned to this pad.";
+  const sample = state.samples.find((item) => item.id === assignment.raw);
+  if (sample) return `${sample.name} is listed in the backup, but its audio data was not decoded.`;
+  return `Instrument ${assignment.raw} was not found in the decoded user-sample table.`;
+}
+
+function showPlaybackNotice(message) {
+  els.decodeStatus.textContent = message;
 }
 
 function getSampleAudioUrl(sample) {
