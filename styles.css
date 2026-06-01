@@ -126,7 +126,8 @@ h3 {
 }
 
 .sidebar,
-.kit-stage {
+.pad-panel,
+.details {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   background: rgba(27, 31, 34, 0.86);
@@ -307,15 +308,19 @@ select,
   column-gap: 18px;
   row-gap: 18px;
   min-height: calc(100vh - 142px);
+}
+
+.pad-panel {
+  min-height: calc(100vh - 142px);
   padding: 22px;
 }
 
 .kit-header {
-  grid-column: 1 / -1;
   display: flex;
   align-items: start;
   justify-content: space-between;
   gap: 16px;
+  margin-bottom: 20px;
 }
 
 .status-pill {
@@ -628,8 +633,6 @@ select,
   grid-template-columns: 1fr;
   align-content: start;
   gap: 0;
-  border: 1px solid rgba(85, 194, 165, 0.24);
-  border-radius: 8px;
   background:
     linear-gradient(180deg, rgba(85, 194, 165, 0.045), transparent 42%),
     rgba(27, 31, 34, 0.86);
@@ -909,7 +912,8 @@ select,
   }
 
   .sidebar,
-  .kit-stage {
+  .kit-stage,
+  .pad-panel {
     min-height: auto;
   }
 
