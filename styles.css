@@ -715,6 +715,39 @@ select,
   margin-top: 8px;
 }
 
+.library-pager {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.library-pager button {
+  min-height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 0 10px;
+  background: #181c1f;
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.library-pager button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.library-pager span {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+  white-space: nowrap;
+}
+
 .library-search {
   width: 100%;
   min-height: 38px;

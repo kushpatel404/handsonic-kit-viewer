@@ -8,6 +8,7 @@ const SAMPLE_RECORD_SIZE = 0x38;
 const SAMPLE_NAME_OFFSET = 0x28;
 const SAMPLE_NAME_LENGTH = 16;
 const APP_SNAPSHOT_MARKER = "HSKV1";
+const SAMPLE_PAGE_SIZE = 80;
 
 const padLayout = [
   { id: "S1", x: 9, y: 44, w: 17, h: 13, slot: 0, shape: "arc arc-left" },
@@ -40,6 +41,7 @@ const state = {
   selectedKit: 0,
   selectedPad: "M1",
   selectedSampleId: null,
+  samplePage: 0,
   dirty: false,
   audioContext: null,
   activeAudios: [],
@@ -100,6 +102,9 @@ const els = {
   padDetail: document.querySelector("#pad-detail"),
   sampleSummary: document.querySelector("#sample-summary"),
   sampleSearch: document.querySelector("#sample-search"),
+  samplePrevButton: document.querySelector("#sample-prev-button"),
+  sampleNextButton: document.querySelector("#sample-next-button"),
+  samplePageStatus: document.querySelector("#sample-page-status"),
   sampleList: document.querySelector("#sample-list"),
 };
 
@@ -127,7 +132,18 @@ els.sampleButton.addEventListener("click", async () => {
 });
 
 els.kitSearch.addEventListener("input", renderKitList);
-els.sampleSearch.addEventListener("input", renderSampleList);
+els.sampleSearch.addEventListener("input", () => {
+  state.samplePage = 0;
+  renderSampleList();
+});
+els.samplePrevButton.addEventListener("click", () => {
+  state.samplePage = Math.max(0, state.samplePage - 1);
+  renderSampleList();
+});
+els.sampleNextButton.addEventListener("click", () => {
+  state.samplePage += 1;
+  renderSampleList();
+});
 els.exportButton.addEventListener("click", exportCurrentKitMap);
 els.saveBackupButton.addEventListener("click", saveRolandBackup);
 els.clearPadButton.addEventListener("click", clearSelectedPad);
@@ -171,6 +187,7 @@ function loadBackup(buffer, fileName) {
   state.selectedKit = 0;
   state.selectedPad = "M1";
   state.selectedSampleId = null;
+  state.samplePage = 0;
   if (loaded.snapshot) applyProjectSnapshot(loaded.snapshot);
   state.dirty = false;
   render();
@@ -554,19 +571,32 @@ function getPlaybackStatus(assignment) {
 function renderSampleList() {
   if (!state.samples.length) {
     els.sampleList.innerHTML = "";
+    els.samplePageStatus.textContent = "Page 0 / 0";
+    els.samplePrevButton.disabled = true;
+    els.sampleNextButton.disabled = true;
     return;
   }
 
   const query = els.sampleSearch.value.trim().toLowerCase();
   const samples = getOrderedSamples()
     .filter((sample) => !query || sample.name.toLowerCase().includes(query) || String(sample.id).includes(query));
+  const pageCount = Math.max(1, Math.ceil(samples.length / SAMPLE_PAGE_SIZE));
+  state.samplePage = Math.max(0, Math.min(state.samplePage, pageCount - 1));
+  const pageStart = state.samplePage * SAMPLE_PAGE_SIZE;
+  const pageSamples = samples.slice(pageStart, pageStart + SAMPLE_PAGE_SIZE);
+
+  els.samplePageStatus.textContent = samples.length
+    ? `Page ${state.samplePage + 1} / ${pageCount} (${samples.length} sounds)`
+    : "Page 0 / 0";
+  els.samplePrevButton.disabled = state.samplePage <= 0;
+  els.sampleNextButton.disabled = state.samplePage >= pageCount - 1 || !samples.length;
 
   if (!samples.length) {
     els.sampleList.innerHTML = `<div class="empty">No sounds match that search.</div>`;
     return;
   }
 
-  els.sampleList.innerHTML = samples.map((sample) => `
+  els.sampleList.innerHTML = pageSamples.map((sample) => `
     <button class="sample-button ${sample.id === state.selectedSampleId ? "active" : ""}" draggable="true" data-sample-id="${sample.id}">
       <span>${escapeHtml(sample.name)}</span>
       <span class="sample-id">${sample.hasBackupAudio || sample.imported ? "audio" : sample.id}</span>
@@ -683,6 +713,7 @@ function deleteSelectedSample() {
     .forEach((key) => state.loopBuffers.delete(key));
   if (sample.audioUrl?.startsWith("blob:")) URL.revokeObjectURL(sample.audioUrl);
   state.selectedSampleId = null;
+  state.samplePage = 0;
   state.dirty = true;
   renderSelectedKit();
   renderDetails();
@@ -830,6 +861,7 @@ async function importWaveFiles(event) {
     });
   });
   state.selectedSampleId = startId;
+  state.samplePage = 0;
   state.dirty = true;
   els.waveInput.value = "";
   renderSelectedKit();
