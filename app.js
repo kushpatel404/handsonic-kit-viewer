@@ -1199,9 +1199,9 @@ async function startBufferLoop(key, audioUrl, kit, pad, assignment) {
 }
 
 function getLoopPlaybackRate(kit, assignment) {
-  const sourceBpm = Math.max(20, Number(assignment?.editor?.loopBpm) || 120);
-  const targetBpm = Math.max(20, Number(kit?.tempo) || 120);
-  return Math.max(0.25, Math.min(4, targetBpm / sourceBpm));
+  const loopBpm = Math.max(20, Number(assignment?.editor?.loopBpm) || 120);
+  const kitBpm = Math.max(20, Number(kit?.tempo) || 120);
+  return Math.max(0.25, Math.min(4, (kitBpm / 120) * (loopBpm / 120)));
 }
 
 function getElementLoopPlaybackRate(kit, assignment) {
