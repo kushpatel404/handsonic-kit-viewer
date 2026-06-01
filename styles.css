@@ -301,16 +301,21 @@ select,
 }
 
 .kit-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(310px, 360px);
+  align-items: start;
+  column-gap: 18px;
+  row-gap: 18px;
   min-height: calc(100vh - 142px);
   padding: 22px;
 }
 
 .kit-header {
+  grid-column: 1 / -1;
   display: flex;
   align-items: start;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 20px;
 }
 
 .status-pill {
@@ -325,7 +330,7 @@ select,
   position: relative;
   width: min(640px, 100%);
   aspect-ratio: 0.72 / 1;
-  margin: 0 auto 22px;
+  margin: 0 auto;
   border: 1px solid #4c5054;
   border-radius: 7% 7% 46% 46%;
   background:
@@ -620,12 +625,13 @@ select,
 
 .details {
   display: grid;
-  grid-template-columns: minmax(250px, 1fr) minmax(260px, 0.85fr) minmax(300px, 1.05fr);
-  gap: 14px;
+  grid-template-columns: 1fr;
+  align-content: start;
+  gap: 12px;
 }
 
 .details > div {
-  min-height: 116px;
+  min-height: 0;
   border: 1px solid rgba(85, 194, 165, 0.24);
   border-radius: 8px;
   padding: 16px;
@@ -816,7 +822,7 @@ select,
 .sample-list {
   display: grid;
   gap: 6px;
-  max-height: 220px;
+  max-height: 260px;
   overflow: auto;
   margin-top: 12px;
   padding-right: 4px;
@@ -885,6 +891,7 @@ select,
   }
 
   .workspace,
+  .kit-stage,
   .details {
     grid-template-columns: 1fr;
   }
@@ -900,6 +907,10 @@ select,
 }
 
 @media (max-width: 1180px) and (min-width: 901px) {
+  .kit-stage {
+    grid-template-columns: 1fr;
+  }
+
   .details {
     grid-template-columns: repeat(2, minmax(260px, 1fr));
   }
