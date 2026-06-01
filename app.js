@@ -99,6 +99,7 @@ const els = {
   padLayout: document.querySelector("#pad-layout"),
   padDetail: document.querySelector("#pad-detail"),
   sampleSummary: document.querySelector("#sample-summary"),
+  sampleSearch: document.querySelector("#sample-search"),
   sampleList: document.querySelector("#sample-list"),
 };
 
@@ -126,6 +127,7 @@ els.sampleButton.addEventListener("click", async () => {
 });
 
 els.kitSearch.addEventListener("input", renderKitList);
+els.sampleSearch.addEventListener("input", renderSampleList);
 els.exportButton.addEventListener("click", exportCurrentKitMap);
 els.saveBackupButton.addEventListener("click", saveRolandBackup);
 els.clearPadButton.addEventListener("click", clearSelectedPad);
@@ -518,7 +520,7 @@ function renderDetails() {
     const label = getAssignmentLabel(assignment);
     const playbackStatus = getPlaybackStatus(assignment);
     const loopStatus = isPadLoopEnabled(assignment)
-      ? `Loop: source ${Number(assignment.editor.loopBpm).toFixed(1)} BPM / kit ${Number(kit.tempo).toFixed(1)} BPM`
+      ? `Loop: source ${Math.round(Number(assignment.editor.loopBpm) || 120)} BPM / kit ${Number(kit.tempo).toFixed(1)} BPM`
       : "Loop: off";
     els.padDetail.innerHTML = `
       <strong>${pad.id}</strong> on <strong>${escapeHtml(kit.name)}</strong><br />
@@ -535,8 +537,10 @@ function renderDetails() {
     els.sampleSummary.textContent = "No embedded user instrument names were found in this pass.";
   } else {
     const extractedCount = state.samples.filter((sample) => sample.hasBackupAudio).length;
-    const preview = state.samples.slice(0, 8).map((item) => item.name).join(", ");
-    els.sampleSummary.innerHTML = `${state.samples.length} names found / ${extractedCount} playable from backup, including ${escapeHtml(preview)}.`;
+    const importedCount = state.samples.filter((sample) => sample.imported).length;
+    const preview = getOrderedSamples().slice(0, 8).map((item) => item.name).join(", ");
+    const importedText = importedCount ? ` / ${importedCount} imported` : "";
+    els.sampleSummary.innerHTML = `${state.samples.length} names found${importedText} / ${extractedCount} playable from backup, including ${escapeHtml(preview)}.`;
   }
 }
 
@@ -553,7 +557,16 @@ function renderSampleList() {
     return;
   }
 
-  els.sampleList.innerHTML = state.samples.slice(0, 120).map((sample) => `
+  const query = els.sampleSearch.value.trim().toLowerCase();
+  const samples = getOrderedSamples()
+    .filter((sample) => !query || sample.name.toLowerCase().includes(query) || String(sample.id).includes(query));
+
+  if (!samples.length) {
+    els.sampleList.innerHTML = `<div class="empty">No sounds match that search.</div>`;
+    return;
+  }
+
+  els.sampleList.innerHTML = samples.map((sample) => `
     <button class="sample-button ${sample.id === state.selectedSampleId ? "active" : ""}" draggable="true" data-sample-id="${sample.id}">
       <span>${escapeHtml(sample.name)}</span>
       <span class="sample-id">${sample.hasBackupAudio || sample.imported ? "audio" : sample.id}</span>
@@ -574,6 +587,13 @@ function renderSampleList() {
   });
 }
 
+function getOrderedSamples() {
+  return [...state.samples].sort((a, b) => {
+    if (!!a.imported !== !!b.imported) return a.imported ? -1 : 1;
+    return String(a.name).localeCompare(String(b.name), undefined, { numeric: true, sensitivity: "base" });
+  });
+}
+
 function renderSelectedPadSettings(assignment) {
   const editor = assignment?.editor || createPadEditor();
   els.padLevel.value = editor.level;
@@ -583,7 +603,7 @@ function renderSelectedPadSettings(assignment) {
   els.padMute.value = editor.mute;
   els.padTrigger.value = editor.trigger;
   els.padLoop.checked = !!editor.loop || editor.trigger === "Loop";
-  els.padLoopBpm.value = editor.loopBpm;
+  els.padLoopBpm.value = Math.round(Number(editor.loopBpm) || 120);
   els.padMidiNote.value = editor.midiNote;
   els.padMidiChannel.value = editor.midiChannel;
   els.padMidiGate.value = editor.midiGate;
@@ -618,7 +638,7 @@ function updateSelectedPadSettings() {
     mute: els.padMute.value,
     trigger: els.padTrigger.value,
     loop: els.padLoop.checked || els.padTrigger.value === "Loop",
-    loopBpm: Math.max(20, Math.min(320, Number(els.padLoopBpm.value) || 120)),
+    loopBpm: Math.max(20, Math.min(320, Math.round(Number(els.padLoopBpm.value) || 120))),
     midiNote: Math.max(0, Math.min(127, Number(els.padMidiNote.value) || 0)),
     midiChannel: els.padMidiChannel.value,
     midiGate: els.padMidiGate.value,

@@ -73,7 +73,7 @@
                 <label>Mute group<select id="pad-mute"><option>Off</option><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
                 <label>Trigger<select id="pad-trigger"><option>Shot</option><option>Alt</option><option>Loop</option></select></label>
                 <label class="check-field"><input id="pad-loop" type="checkbox" /><span>Loop this pad</span></label>
-                <label>Loop source BPM<input id="pad-loop-bpm" class="number-field" type="number" min="20" max="320" step="0.1" value="120" /></label>
+                <label>Loop source BPM<input id="pad-loop-bpm" class="number-field" type="number" min="20" max="320" step="1" value="120" /></label>
               </div>
             </details>
             <details>
@@ -131,6 +131,7 @@
             <div>
               <h3>Instrument Library</h3>
               <p id="sample-summary">Embedded sample names will appear after loading a backup.</p>
+              <input id="sample-search" class="library-search" type="search" placeholder="Search sounds" />
               <div class="library-actions">
                 <label class="mini-upload">
                   <input id="wave-input" type="file" accept=".wav,.aif,.aiff,audio/*" multiple />
