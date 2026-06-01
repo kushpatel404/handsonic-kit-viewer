@@ -122,6 +122,7 @@ h3 {
 .workspace {
   display: grid;
   grid-template-columns: 330px minmax(0, 1fr);
+  align-items: start;
   gap: 18px;
 }
 
@@ -135,7 +136,6 @@ h3 {
 }
 
 .sidebar {
-  min-height: calc(100vh - 104px);
   overflow: hidden;
 }
 
@@ -307,11 +307,9 @@ select,
   align-items: start;
   column-gap: 18px;
   row-gap: 18px;
-  min-height: calc(100vh - 104px);
 }
 
 .pad-panel {
-  min-height: calc(100vh - 104px);
   padding: 16px 20px;
 }
 
