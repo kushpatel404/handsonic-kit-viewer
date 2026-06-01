@@ -122,8 +122,10 @@ h3 {
 .workspace {
   display: grid;
   grid-template-columns: 330px minmax(0, 1fr);
-  align-items: start;
+  align-items: stretch;
   gap: 18px;
+  height: calc(100vh - 100px);
+  min-height: 0;
 }
 
 .sidebar,
@@ -136,6 +138,9 @@ h3 {
 }
 
 .sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -264,7 +269,9 @@ select,
 }
 
 .kit-list {
-  max-height: min(420px, calc(100vh - 650px));
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
   overflow: auto;
   padding: 8px;
 }
@@ -304,13 +311,18 @@ select,
 .kit-stage {
   display: grid;
   grid-template-columns: minmax(720px, 1fr) minmax(310px, 360px);
-  align-items: start;
+  align-items: stretch;
   column-gap: 18px;
   row-gap: 18px;
+  min-height: 0;
 }
 
 .pad-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   padding: 16px 20px;
+  overflow: hidden;
 }
 
 .kit-header {
@@ -331,7 +343,8 @@ select,
 
 .handsonic {
   position: relative;
-  width: min(720px, 100%, calc((100vh - 202px) * 0.72));
+  width: min(720px, 100%, calc((100vh - 190px) * 0.72));
+  max-height: calc(100vh - 190px);
   aspect-ratio: 0.72 / 1;
   margin: 0 auto;
   border: 1px solid #4c5054;
@@ -627,10 +640,10 @@ select,
 }
 
 .details {
-  display: grid;
-  grid-template-columns: 1fr;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: 0;
+  min-height: 0;
   background:
     linear-gradient(180deg, rgba(85, 194, 165, 0.045), transparent 42%),
     rgba(27, 31, 34, 0.86);
@@ -641,6 +654,7 @@ select,
 }
 
 .details > div {
+  flex: 0 0 auto;
   min-height: 0;
   border: 0;
   border-bottom: 1px solid var(--line);
@@ -651,6 +665,10 @@ select,
 }
 
 .details > div:last-child {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
   border-bottom: 0;
 }
 
@@ -835,7 +853,9 @@ select,
 .sample-list {
   display: grid;
   gap: 6px;
-  max-height: min(420px, calc(100vh - 650px));
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
   overflow: auto;
   margin-top: 12px;
   padding-right: 4px;
