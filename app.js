@@ -7,6 +7,7 @@ const SAMPLE_TABLE_START = 0x45ffc;
 const SAMPLE_RECORD_SIZE = 0x38;
 const SAMPLE_NAME_OFFSET = 0x28;
 const SAMPLE_NAME_LENGTH = 16;
+const APP_SNAPSHOT_MARKER = "HSKV1";
 
 const padLayout = [
   { id: "S1", x: 9, y: 44, w: 17, h: 13, slot: 0, shape: "arc arc-left" },
@@ -156,8 +157,9 @@ els.saveProjectButton.addEventListener("click", saveProject);
 els.waveInput.addEventListener("change", importWaveFiles);
 
 function loadBackup(buffer, fileName) {
-  const view = new DataView(buffer);
-  const bytes = new Uint8Array(buffer);
+  const loaded = splitEmbeddedSnapshot(new Uint8Array(buffer));
+  const bytes = loaded.bytes;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   state.fileName = fileName;
   state.backupBytes = bytes;
   stopAllAudio();
@@ -167,8 +169,12 @@ function loadBackup(buffer, fileName) {
   state.selectedKit = 0;
   state.selectedPad = "M1";
   state.selectedSampleId = null;
+  if (loaded.snapshot) applyProjectSnapshot(loaded.snapshot);
   state.dirty = false;
   render();
+  if (loaded.snapshot) {
+    els.decodeStatus.textContent = "Backup loaded with saved app edits";
+  }
 }
 
 function parseKits(view, bytes) {
@@ -825,11 +831,7 @@ async function openProjectFile(event) {
   if (!file) return;
   try {
     const payload = JSON.parse(await file.text());
-    if (!Array.isArray(payload.kits)) throw new Error("Missing kits");
-    state.kits = payload.kits.map((kit, index) => hydrateKit(kit, index));
-    state.selectedKit = Math.max(0, Math.min(payload.selectedKit || 0, state.kits.length - 1));
-    state.selectedPad = padLayout.some((pad) => pad.id === payload.selectedPad) ? payload.selectedPad : "M1";
-    applyProjectSampleMetadata(payload.samples || []);
+    applyProjectSnapshot(payload);
     state.dirty = false;
     render();
   } catch (error) {
@@ -840,8 +842,16 @@ async function openProjectFile(event) {
 }
 
 function saveProject() {
-  const payload = {
+  const payload = createProjectSnapshot();
+  downloadJson(payload, "handsonic-project.json");
+  state.dirty = false;
+  renderSelectedKit();
+}
+
+function createProjectSnapshot() {
+  return {
     format: "handsonic-kit-project",
+    version: 2,
     sourceBackup: state.fileName,
     savedAt: new Date().toISOString(),
     selectedKit: state.selectedKit,
@@ -856,9 +866,6 @@ function saveProject() {
       audioDataUrl: sample.imported ? sample.audioDataUrl || (sample.audioUrl?.startsWith("data:") ? sample.audioUrl : "") : "",
     })),
   };
-  downloadJson(payload, "handsonic-project.json");
-  state.dirty = false;
-  renderSelectedKit();
 }
 
 function serializeKit(kit) {
@@ -875,9 +882,19 @@ function serializeKit(kit) {
       raw: assignment.raw,
       offset: assignment.offset,
       customName: assignment.customName,
+      audioUrl: assignment.audioUrl?.startsWith("data:") ? "" : assignment.audioUrl || "",
       editor: assignment.editor,
     })),
   };
+}
+
+function applyProjectSnapshot(payload) {
+  if (!Array.isArray(payload.kits)) throw new Error("Missing kits");
+  state.kits = payload.kits.map((kit, index) => hydrateKit(kit, index));
+  state.selectedKit = Math.max(0, Math.min(payload.selectedKit || 0, state.kits.length - 1));
+  state.selectedPad = padLayout.some((pad) => pad.id === payload.selectedPad) ? payload.selectedPad : "M1";
+  applyProjectSampleMetadata(payload.samples || []);
+  restoreAssignmentAudioUrls();
 }
 
 function applyProjectSampleMetadata(samples) {
@@ -904,6 +921,18 @@ function applyProjectSampleMetadata(samples) {
     });
     const added = state.samples[state.samples.length - 1];
     if (added.audioDataUrl) added.audioUrl = added.audioDataUrl;
+  });
+}
+
+function restoreAssignmentAudioUrls() {
+  const samplesById = new Map(state.samples.map((sample) => [sample.id, sample]));
+  state.kits.forEach((kit) => {
+    kit.assignments.forEach((assignment) => {
+      if (assignment.audioUrl) return;
+      const sample = samplesById.get(assignment.raw);
+      const audioUrl = sample?.audioDataUrl || sample?.audioUrl || "";
+      if (audioUrl) assignment.audioUrl = audioUrl;
+    });
   });
 }
 
@@ -1676,6 +1705,56 @@ function downloadJson(payload, fileName) {
   URL.revokeObjectURL(url);
 }
 
+function splitEmbeddedSnapshot(bytes) {
+  const markerBytes = asciiBytes(APP_SNAPSHOT_MARKER);
+  const footerSize = markerBytes.length + 4;
+  if (bytes.length <= footerSize) return { bytes, snapshot: null };
+
+  const markerStart = bytes.length - markerBytes.length;
+  for (let index = 0; index < markerBytes.length; index += 1) {
+    if (bytes[markerStart + index] !== markerBytes[index]) return { bytes, snapshot: null };
+  }
+
+  const lengthOffset = markerStart - 4;
+  const payloadLength = (
+    (bytes[lengthOffset] << 24)
+    | (bytes[lengthOffset + 1] << 16)
+    | (bytes[lengthOffset + 2] << 8)
+    | bytes[lengthOffset + 3]
+  ) >>> 0;
+  const payloadStart = lengthOffset - payloadLength;
+  if (payloadStart < 0 || payloadLength > bytes.length - footerSize) return { bytes, snapshot: null };
+
+  try {
+    const snapshotText = new TextDecoder().decode(bytes.subarray(payloadStart, lengthOffset));
+    return {
+      bytes: bytes.slice(0, payloadStart),
+      snapshot: JSON.parse(snapshotText),
+    };
+  } catch (error) {
+    return { bytes, snapshot: null };
+  }
+}
+
+function appendEmbeddedSnapshot(bytes, snapshot) {
+  const payloadBytes = new TextEncoder().encode(JSON.stringify(snapshot));
+  const markerBytes = asciiBytes(APP_SNAPSHOT_MARKER);
+  const output = new Uint8Array(bytes.length + payloadBytes.length + 4 + markerBytes.length);
+  output.set(bytes, 0);
+  output.set(payloadBytes, bytes.length);
+  const lengthOffset = bytes.length + payloadBytes.length;
+  output[lengthOffset] = (payloadBytes.length >>> 24) & 0xff;
+  output[lengthOffset + 1] = (payloadBytes.length >>> 16) & 0xff;
+  output[lengthOffset + 2] = (payloadBytes.length >>> 8) & 0xff;
+  output[lengthOffset + 3] = payloadBytes.length & 0xff;
+  output.set(markerBytes, lengthOffset + 4);
+  return output;
+}
+
+function asciiBytes(value) {
+  return Uint8Array.from(String(value), (char) => char.charCodeAt(0) & 0xff);
+}
+
 function saveRolandBackup() {
   if (!state.backupBytes?.length || readAscii(state.backupBytes, 0, 6) !== "HPD-20") {
     els.decodeStatus.textContent = "Open an HPD-20 backup before saving a Roland backup";
@@ -1714,9 +1793,10 @@ function saveRolandBackup() {
 
   const extension = /\.hso$/i.test(state.fileName) ? ".HSO" : ".HS0";
   const stem = (state.fileName || "HANDSONIC-BACKUP").replace(/\.(hs0|hso)$/i, "");
-  downloadBlob(new Blob([output], { type: "application/octet-stream" }), `${stem}-edited${extension}`);
+  const savedBytes = appendEmbeddedSnapshot(output, createProjectSnapshot());
+  downloadBlob(new Blob([savedBytes], { type: "application/octet-stream" }), `${stem}-edited${extension}`);
   els.decodeStatus.textContent = skippedImportedAssignments
-    ? `Backup saved / ${skippedImportedAssignments} imported wave assignments need project save or Roland audio allocation`
+    ? `Backup saved / ${skippedImportedAssignments} imported wave assignments restored when reopened in this app`
     : `Backup saved / ${renamedKits} kit slots written`;
 }
 

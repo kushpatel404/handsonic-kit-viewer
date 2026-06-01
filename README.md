@@ -42,4 +42,6 @@ The HPD-20 backup format is proprietary. This app decodes the kit table, user-in
 
 The editor includes HandSonic versions of common pad-editor workflows: kit naming, volume/tempo/pad links, selected-pad Main/Sub/MIDI settings, sound-library play/import/delete/tag actions, kit init/duplicate/add/delete/reorder, and JSON project open/save. Project save includes imported wave data so editor work can be reopened.
 
-`Save backup` creates an edited `.HS0` or `.HSO` copy of the uploaded HPD-20 backup for mapped kit name/order and pad assignment IDs. Imported wave allocation and unmapped HPD-20 parameter blocks are not written to the Roland binary yet; keep a project save for those edits and test edited Roland backups on a copy before relying on them on hardware.
+`Save backup` creates an edited `.HS0` or `.HSO` copy of the uploaded HPD-20 backup for mapped kit name/order and pad assignment IDs. The app also embeds a private editor snapshot at the end of the saved backup so imported waves, loop pad assignments, and editor settings come back when that saved backup is opened in this app again.
+
+Imported wave allocation and unmapped HPD-20 parameter blocks are not written into Roland's proprietary audio tables yet; keep a project save for important edits and test edited Roland backups on a copy before relying on them on hardware.
