@@ -124,7 +124,7 @@ h3 {
   grid-template-columns: 330px minmax(0, 1fr);
   align-items: stretch;
   gap: 18px;
-  height: calc(100vh - 48px);
+  height: calc(100vh + 320px);
   min-height: 0;
 }
 
