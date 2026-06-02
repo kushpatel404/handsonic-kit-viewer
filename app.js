@@ -347,7 +347,11 @@ function readSampleSegments(view, bytes, recordOffset) {
 }
 
 function mapBackupAudioAddress(address) {
-  return ((address >>> 16) * 0x800) + (address & 0xffff);
+  // HPD-20 user-sample records store absolute flash addresses. The backup file
+  // starts at the flash region base, so convert the address back to a file offset.
+  const flashBase = 0x1c000000;
+  if (address >= flashBase) return address - flashBase;
+  return address;
 }
 
 function findUsableAudioBounds(bytes, start, end) {
@@ -564,7 +568,7 @@ function renderDetails() {
 function getPlaybackStatus(assignment) {
   if (assignment.audioUrl) return "imported audio file";
   const sample = state.samples.find((item) => item.id === assignment.raw);
-  if (sample?.hasBackupAudio) return "experimental extracted backup sound";
+  if (sample?.hasBackupAudio) return "decoded backup sound";
   if (sample) return "backup sound name only / audio not decoded";
   return "no decoded audio";
 }
