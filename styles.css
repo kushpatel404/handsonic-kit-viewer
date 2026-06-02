@@ -124,7 +124,7 @@ h3 {
   grid-template-columns: 330px minmax(0, 1fr);
   align-items: stretch;
   gap: 18px;
-  height: calc(100vh - 100px);
+  height: calc(100vh - 48px);
   min-height: 0;
 }
 
@@ -927,6 +927,10 @@ select,
   .kit-stage,
   .details {
     grid-template-columns: 1fr;
+  }
+
+  .workspace {
+    height: auto;
   }
 
   .sidebar,
